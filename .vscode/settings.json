@@ -3,6 +3,7 @@
     "options": [
       "--go_opt=paths=source_relative",
       "--go_out=${workspaceRoot}/",
+      "--go_opt=paths=source_relative",
       "--proto_path=${workspaceRoot}/",
     ]
   }
