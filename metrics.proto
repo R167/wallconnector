@@ -1,0 +1,183 @@
+syntax = "proto3";
+
+package com.winstondurand.wallconnector;
+
+import "google/protobuf/descriptor.proto";
+
+option go_package = "github.com/R167/wallconnector";
+
+enum Conversion {
+  NONE = 0;
+
+  // Compute the inverse of the value.
+  INVERSE = 1;
+
+  // Convert from watt-hours to joules.
+  WH_TO_J = 2;
+}
+
+enum MetricType {
+  GAUGE = 0;
+  COUNTER = 1;
+}
+
+message Metric {
+  string name = 1;
+  MetricType type = 2;
+  string description = 3;
+  string value_label = 6;
+  repeated string labels = 4;
+  Conversion conversion = 5;
+}
+
+// An extension to annotate the fields with their prometheus metric name, type, description,
+// labels, and any applicable conversions (e.g. F_TO_C).
+extend google.protobuf.FieldOptions {
+  Metric prometheus = 50000;
+}
+
+message Vitals {
+    bool contactor_closed = 1 [(prometheus) = {
+        name: "contactor_closed_status"
+        type: GAUGE
+        description: "Whether the contactor is closed."
+    }];
+    bool vehicle_connected = 2 [(prometheus) = {
+        name: "vehicle_connected_status"
+        type: GAUGE
+        description: "Whether a vehicle is connected."
+    }];
+    double session_s = 3 [(prometheus) = {
+        name: "session_seconds_total"
+        type: COUNTER
+        description: "The duration of the current session."
+    }];
+    double grid_v = 4 [(prometheus) = {
+        name: "grid_voltage"
+        type: GAUGE
+        description: "The voltage of the grid."
+    }];
+    double grid_hz = 5 [(prometheus) = {
+        name: "grid_period_seconds"
+        type: GAUGE
+        description: "The frequency of the grid."
+        conversion: INVERSE
+    }];
+    double vehicle_current_a = 6 [(prometheus) = {
+        name: "vehicle_current_amperes"
+        type: GAUGE
+        description: "The current being drawn by the vehicle."
+    }];
+    double currentA_a = 7 [(prometheus) = {
+        name: "wall_amperes"
+        type: GAUGE
+        description: "The current being drawn at the wall."
+        labels: "phase:A"
+    }];
+    double currentB_a = 8 [(prometheus) = {
+        name: "wall_amperes"
+        type: GAUGE
+        description: "The current being drawn at the wall."
+        labels: "phase:B"
+    }];
+    double currentC_a = 9 [(prometheus) = {
+        name: "wall_amperes"
+        type: GAUGE
+        description: "The current being drawn at the wall."
+        labels: "phase:C"
+    }];
+    double currentN_a = 10 [(prometheus) = {
+        name: "wall_amperes"
+        type: GAUGE
+        description: "The current being drawn at the wall."
+        labels: "phase:N"
+    }];
+    double voltageA_v = 11 [(prometheus) = {
+        name: "wall_volts"
+        type: GAUGE
+        description: "The voltage at the wall."
+        labels: "phase:A"
+    }];
+    double voltageB_v = 12 [(prometheus) = {
+        name: "wall_volts"
+        type: GAUGE
+        description: "The voltage at the wall."
+        labels: "phase:B"
+    }];
+    double voltageC_v = 13 [(prometheus) = {
+        name: "wall_volts"
+        type: GAUGE
+        description: "The voltage at the wall."
+        labels: "phase:C"
+    }];
+    double relay_coil_v = 14 [(prometheus) = {
+        name: "relay_coil_volts"
+        type: GAUGE
+        description: "The voltage at the relay coil."
+    }];
+    double pcba_temp_c = 15 [(prometheus) = {
+        name: "temp_celsius"
+        type: GAUGE
+        description: "Temperature at various locations."
+        labels: "location:pcba"
+    }];
+    double handle_temp_c = 16 [(prometheus) = {
+        name: "temp_celsius"
+        type: GAUGE
+        description: "Temperature at various locations."
+        labels: "location:handle"
+    }];
+    double mcu_temp_c = 17 [(prometheus) = {
+        name: "temp_celsius"
+        type: GAUGE
+        description: "Temperature at various locations."
+        labels: "location:mcu"
+    }];
+    double uptime_s = 18 [(prometheus) = {
+        name: "uptime_seconds_total"
+        type: COUNTER
+        description: "The duration the device has been running."
+    }];
+    double input_thermopile_uv = 19 [(prometheus) = {
+        name: "input_thermopile_uv"
+        type: GAUGE
+        description: "Input thermopile"
+    }];
+    double prox_v = 20 [(prometheus) = {
+        name: "proximity_sensor_volts"
+        type: GAUGE
+        description: "Proximity sensor voltage"
+    }];
+    double pilot_high_v = 21 [(prometheus) = {
+        name: "pilot_high_volts"
+        type: GAUGE
+        description: "Pilot high voltage"
+    }];
+    double pilot_low_v = 22 [(prometheus) = {
+        name: "pilot_low_volts"
+        type: GAUGE
+        description: "Pilot low voltage"
+    }];
+    double session_energy_wh = 23 [(prometheus) = {
+        name: "session_energy_joules_total"
+        type: COUNTER
+        description: "The energy consumed during the current session."
+        conversion: WH_TO_J
+    }];
+    int32 config_status = 24 [(prometheus) = {
+        name: "config_status"
+        type: GAUGE
+        description: "The status of the configuration."
+    }];
+    int32 evse_state = 25 [(prometheus) = {
+        name: "evse_state"
+        type: GAUGE
+        description: "The state of the EVSE."
+    }];
+    repeated int32 current_alerts = 26 [(prometheus) = {
+        name: "current_alerts_info"
+        type: GAUGE
+        description: "The current alerts."
+        value_label: "alert"
+    }];
+}
