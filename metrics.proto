@@ -22,11 +22,11 @@ message Metric {
         COUNTER = 1;
     }
 
-  string name = 1;
-  Type type = 2;
-  string help = 3;
-  repeated string labels = 4;
-  Conversion conversion = 5;
+    string name = 1;
+    Type type = 2;
+    string help = 3;
+    repeated string labels = 4;
+    Conversion conversion = 5;
 }
 
 // An extension to annotate the fields with their prometheus metric name, type, description,

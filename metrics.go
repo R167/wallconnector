@@ -110,7 +110,7 @@ func (m *metricSet[T]) Collect(ctx context.Context, ch chan<- prometheus.Metric)
 		ch <- prometheus.MustNewConstMetric(
 			metric.desc,
 			metric.typ,
-			val,
+			metric.metric.ConvertValue(val),
 			metric.labels...,
 		)
 		return true
@@ -184,6 +184,23 @@ func (m *Metric) LabelValues() []string {
 		values = append(values, value)
 	}
 	return values
+}
+
+const (
+	whToJoules = 3600
+)
+
+func (m *Metric) ConvertValue(v float64) float64 {
+	switch m.GetConversion() {
+	case Conversion_NONE:
+		return v
+	case Conversion_INVERSE:
+		return 1 / v
+	case Conversion_WH_TO_J:
+		return v * whToJoules
+	default:
+		panic("unknown conversion")
+	}
 }
 
 func (d descriptions) getDescription(v *Metric, ns string) *prometheus.Desc {
