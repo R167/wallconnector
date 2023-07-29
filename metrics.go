@@ -78,6 +78,9 @@ type metricSet[T proto.Message] struct {
 
 func (m *metricSet[T]) Describe(ch chan<- *prometheus.Desc) {
 	for _, metric := range m.metrics {
+		if metric.metric.GetSkip() {
+			continue
+		}
 		ch <- metric.desc
 	}
 }
@@ -88,23 +91,36 @@ func (m *metricSet[T]) Collect(ctx context.Context, ch chan<- prometheus.Metric)
 	if err != nil {
 		return
 	}
-	v.ProtoReflect().Range(func(field protoreflect.FieldDescriptor, value protoreflect.Value) bool {
+	fields := v.ProtoReflect().Descriptor().Fields()
+	for i := 0; i < fields.Len(); i++ {
+		field := fields.Get(i)
 		metric, ok := m.metrics[field.JSONName()]
 		if !ok {
 			// Ignore unsupported types.
-			logger.Printf("unknown key %s(%s)", field.Kind(), field.JSONName())
-			return true
+			logger.Printf("unknown key %s(%s)", field.JSONName(), field.Kind())
+			continue
 		}
+		if metric.metric.GetSkip() {
+			continue
+		}
+
+		value := v.ProtoReflect().Get(field)
+
 		var val float64
 		switch field.Kind() {
 		case protoreflect.FloatKind, protoreflect.DoubleKind:
 			val = value.Float()
 		case protoreflect.Int32Kind, protoreflect.Int64Kind:
 			val = float64(value.Int())
+		case protoreflect.BoolKind:
+			val = 0
+			if value.Bool() {
+				val = 1
+			}
 		default:
 			// Ignore unsupported types.
-			logger.Printf("unsupported type %s(%s)", field.Kind(), field.JSONName())
-			return true
+			logger.Printf("unsupported type %s(%s)", field.JSONName(), field.Kind())
+			continue
 		}
 
 		ch <- prometheus.MustNewConstMetric(
@@ -113,16 +129,10 @@ func (m *metricSet[T]) Collect(ctx context.Context, ch chan<- prometheus.Metric)
 			metric.metric.ConvertValue(val),
 			metric.labels...,
 		)
-		return true
-	})
+	}
 }
 
 func newMetricSet[T proto.Message](ns string, fetcher func(context.Context) (T, error)) metricFetcher {
-	// Parse the Metric proto message off of each field on a Vitals message.
-	// It's fine to use reflection here since this is only called once at
-	// startup.
-	// Use proto reflect to parse the prometheus metric name and description
-	// from the proto message.
 	set := make(map[string]metricData)
 	descs := make(descriptions)
 
@@ -132,6 +142,10 @@ func newMetricSet[T proto.Message](ns string, fetcher func(context.Context) (T, 
 		field := desc.Fields().Get(i)
 		ext, ok := proto.GetExtension(field.Options(), E_Prometheus).(*Metric)
 		if !ok || ext.GetName() == "" {
+			continue
+		}
+		if ext.GetSkip() {
+			set[field.JSONName()] = metricData{metric: ext}
 			continue
 		}
 

@@ -27,6 +27,10 @@ message Metric {
     string help = 3;
     repeated string labels = 4;
     Conversion conversion = 5;
+
+    // Whether to skip this field when generating the prometheus metrics.
+    // Note: Even when this is set to true, the field still requires a name.
+    bool skip = 20;
 }
 
 // An extension to annotate the fields with their prometheus metric name, type, description,
@@ -180,7 +184,11 @@ message Vitals {
         type: GAUGE
         help: "The state of the EVSE."
     }];
-    repeated int32 current_alerts = 26;
+
+    repeated int32 current_alerts = 26 [(prometheus) = {
+        name: "current_alerts"
+        skip: true
+    }];
 }
 
 // Lifetime represents the lifetime stats of the wallconnector.
