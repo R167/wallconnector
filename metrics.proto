@@ -182,3 +182,68 @@ message Vitals {
     }];
     repeated int32 current_alerts = 26;
 }
+
+// Lifetime represents the lifetime stats of the wallconnector.
+//
+// See Wall Monitor FAQ for more details:
+// https://wallmonitor.app/faq/explain_lifetime
+message Lifetime {
+    int32 contactor_cycles = 1 [(prometheus) = {
+        name: "contactor_cycles_total"
+        type: COUNTER
+        help: "This is the total number of times your Wall Connector has turned power on/off to your vehicle."
+    }];
+    int32 contactor_cycles_loaded = 2 [(prometheus) = {
+        name: "contactor_cycles_loaded_total"
+        type: COUNTER
+        help: "This is the total number of times your Wall Connector has turned power on/off to your vehicle while the vehicle was charging."
+    }];
+    int32 alert_count = 3 [(prometheus) = {
+        name: "alert_count_total"
+        type: COUNTER
+        help: "This is the total number of alerts that have occurred on your Wall Connector."
+    }];
+    int32 thermal_foldback_count = 4 [(prometheus) = {
+        name: "thermal_foldback_count_total"
+        type: COUNTER
+        help: "This is the total number of times your Wall Connector has reduced the current to your vehicle due to high temperatures."
+    }];
+    double avg_startup_time = 5 [(prometheus) = {
+        name: "avg_startup_time_seconds"
+        type: GAUGE
+        help: "Unknown."
+    }];
+    int32 charge_starts = 6 [(prometheus) = {
+        name: "charge_starts_total"
+        type: COUNTER
+        help: "This is the total number of times your vehicle has started charging."
+    }];
+    int64 energy_wh = 7 [(prometheus) = {
+        name: "energy_joules_total"
+        type: COUNTER
+        help: "This is the total amount of energy your vehicle has consumed."
+        conversion: WH_TO_J
+    }];
+    int32 connector_cycles = 8 [(prometheus) = {
+        name: "connector_cycles_total"
+        type: COUNTER
+        help: "This is the total number of times your vehicle has been plugged in."
+    }];
+    int64 uptime_s = 9 [(prometheus) = {
+        name: "uptime_seconds_total"
+        type: COUNTER
+        help: "This is the total amount of time your Wall Connector has been powered on."
+    }];
+    int32 charge_time_s = 10 [(prometheus) = {
+        name: "charge_time_seconds_total"
+        type: COUNTER
+        help: "This is the total amount of time your vehicle has been charging."
+    }];
+}
+
+// Version represents the version info of the wallconnector.
+message Version {
+    string firmware_version = 1;
+    string part_number = 2;
+    string serial_number = 3;
+}

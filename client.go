@@ -1,13 +1,13 @@
 package wallconnector
 
 import (
+	"context"
 	"encoding/json"
 	"io"
 	"net/http"
-
-	"google.golang.org/protobuf/encoding/protojson"
-	"google.golang.org/protobuf/proto"
 )
+
+//go:generate protoc --go_out=. --go_opt=paths=source_relative metrics.proto
 
 const (
 	vitalsPath   = "/api/1/vitals"
@@ -38,8 +38,13 @@ func NewClient(addr string, opts ...ConnectorConfig) (*Client, error) {
 	}, nil
 }
 
-func callApi[T any](c *Client, path string) (*T, error) {
-	resp, err := c.client.Get("http://" + c.addr + path)
+func callApi[T any](ctx context.Context, c *Client, path string) (*T, error) {
+	req, err := http.NewRequest(http.MethodGet, "http://"+c.addr+path, nil)
+	if err != nil {
+		return nil, err
+	}
+
+	resp, err := c.client.Do(req.WithContext(ctx))
 	if err != nil {
 		return nil, err
 	}
@@ -50,13 +55,6 @@ func callApi[T any](c *Client, path string) (*T, error) {
 	}
 	v := new(T)
 
-	switch v.(type) {
-	case proto.Message:
-		err = protojson.Unmarshal(data, v)
-	default:
-		err = json.Unmarshal(data, v)
-	}
-
 	if err := json.Unmarshal(data, v); err != nil {
 		return nil, err
 	}
@@ -64,40 +62,16 @@ func callApi[T any](c *Client, path string) (*T, error) {
 }
 
 // Vitals returns the current vitals of the wallconnector.
-func (c *Client) Vitals() (*Vitals, error) {
-	return callApi[Vitals](c, vitalsPath)
+func (c *Client) Vitals(ctx context.Context) (*Vitals, error) {
+	return callApi[Vitals](ctx, c, vitalsPath)
 }
 
 // Lifetime returns the lifetime stats of the wallconnector.
-func (c *Client) Lifetime() (*Lifetime, error) {
-	return callApi[Lifetime](c, lifetimePath)
+func (c *Client) Lifetime(ctx context.Context) (*Lifetime, error) {
+	return callApi[Lifetime](ctx, c, lifetimePath)
 }
 
 // Version returns the version info of the wallconnector.
-func (c *Client) Version() (*Version, error) {
-	return callApi[Version](c, versionPath)
-}
-
-// Lifetime represents the lifetime stats of the wallconnector.
-//
-// See Wall Monitor FAQ for more details:
-// https://wallmonitor.app/faq/explain_lifetime
-type Lifetime struct {
-	ContactorCycles       int     `json:"contactor_cycles"`
-	ContactorCyclesLoaded int     `json:"contactor_cycles_loaded"`
-	AlertCount            int     `json:"alert_count"`
-	ThermalFoldbacks      int     `json:"thermal_foldbacks"`
-	AvgStartupTemp        float64 `json:"avg_startup_temp"` // Is this a float?
-	ChargeStarts          int     `json:"charge_starts"`
-	EnergyWh              int     `json:"energy_wh"`
-	ConnectorCycles       int     `json:"connector_cycles"`
-	UptimeS               int     `json:"uptime_s"`
-	ChargingTimeS         int     `json:"charging_time_s"`
-}
-
-// Version represents the version info of the wallconnector.
-type Version struct {
-	FirmwareVersion string `json:"firmware_version"`
-	PartNumber      string `json:"part_number"`
-	SerialNumber    string `json:"serial_number"`
+func (c *Client) Version(ctx context.Context) (*Version, error) {
+	return callApi[Version](ctx, c, versionPath)
 }
