@@ -10,6 +10,7 @@ import (
 	"github.com/prometheus/client_golang/prometheus"
 	"google.golang.org/protobuf/proto"
 	protoreflect "google.golang.org/protobuf/reflect/protoreflect"
+	"google.golang.org/protobuf/types/descriptorpb"
 )
 
 // A prometheus.Collector implementation for wallconnector stats.
@@ -140,7 +141,8 @@ func newMetricSet[T proto.Message](ns string, fetcher func(context.Context) (T, 
 	desc := v.ProtoReflect().Descriptor()
 	for i := 0; i < desc.Fields().Len(); i++ {
 		field := desc.Fields().Get(i)
-		ext, ok := proto.GetExtension(field.Options(), E_Prometheus).(*Metric)
+		opts := field.Options().(*descriptorpb.FieldOptions)
+		ext, ok := proto.GetExtension(opts, E_Prometheus).(*Metric)
 		if !ok || ext.GetName() == "" {
 			continue
 		}

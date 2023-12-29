@@ -28,7 +28,7 @@ message Metric {
     repeated string labels = 4;
     Conversion conversion = 5;
 
-    // Whether to skip this field when generating the prometheus metrics.
+    // Skip this field when generating the prometheus metrics.
     // Note: Even when this is set to true, the field still requires a name.
     bool skip = 20;
 }
