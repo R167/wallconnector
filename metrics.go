@@ -52,6 +52,7 @@ func NewCollector(client *Client) prometheus.Collector {
 		metricSets: []metricFetcher{
 			newMetricSet("vitals", client.Vitals),
 			newMetricSet("lifetime", client.Lifetime),
+			newMetricSet("wifi", client.Wifi),
 		},
 	}
 }

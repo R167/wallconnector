@@ -75,3 +75,8 @@ func (c *Client) Lifetime(ctx context.Context) (*Lifetime, error) {
 func (c *Client) Version(ctx context.Context) (*Version, error) {
 	return callApi[Version](ctx, c, versionPath)
 }
+
+// WifiStatus returns the wifi status of the wallconnector.
+func (c *Client) Wifi(ctx context.Context) (*Wifi, error) {
+	return callApi[Wifi](ctx, c, wifiPath)
+}
