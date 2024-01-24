@@ -5,6 +5,7 @@ import (
 	"flag"
 	"log"
 	"net/http"
+	"time"
 
 	"github.com/R167/wallconnector"
 	"github.com/prometheus/client_golang/prometheus"
@@ -19,6 +20,8 @@ var (
 )
 
 func main() {
+	start := time.Now()
+
 	// Listen on the specified address and serve prometheus metrics
 	// from the wall connector target.
 	flag.Parse()
@@ -36,15 +39,18 @@ func main() {
 	reg.MustRegister(
 		collector,
 		collectors.NewBuildInfoCollector(),
-		NewUptimeCollector(),
+		// NewUptimeCollector(),
+		collectors.NewGoCollector(collectors.WithGoCollectorRuntimeMetrics(collectors.MetricsAll)),
+		collectors.NewProcessCollector(collectors.ProcessCollectorOpts{}),
 	)
 
 	// Serve the metrics on the specified path.
 	http.Handle(*path, promhttp.HandlerFor(reg, promhttp.HandlerOpts{
-		ErrorLog: log.Default(),
-		Registry: reg,
+		ErrorLog:         log.Default(),
+		Registry:         reg,
+		ProcessStartTime: start,
 	}))
-	log.Printf("listening on %s", *addr)
+	log.Printf("listening on %s, proxying from %s", *addr, *target)
 	if err := http.ListenAndServe(*addr, nil); err != nil {
 		panic(err)
 	}
