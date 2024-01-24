@@ -255,3 +255,45 @@ message Version {
     string part_number = 2;
     string serial_number = 3;
 }
+
+// {
+//     "wifi_signal_strength": 74,
+//     "wifi_rssi": -53,
+//     "wifi_snr": 43,
+//     "wifi_connected": true,
+//     "internet": true,
+//     "wifi_infra_ip": "10.10.1.217",
+//     "wifi_ssid": "<base64 data>",
+//     "wifi_mac": "98:ED:5C:B8:2C:17"
+// }
+
+// Wifi represents the wifi info of the wallconnector.
+message Wifi {
+    int32 wifi_signal_strength = 1 [(prometheus) = {
+        name: "signal_strength"
+        type: GAUGE
+        help: "The signal strength of the wifi."
+    }];
+    int32 wifi_rssi = 2 [(prometheus) = {
+        name: "rssi"
+        type: GAUGE
+        help: "The RSSI of the wifi."
+    }];
+    int32 wifi_snr = 3 [(prometheus) = {
+        name: "snr"
+        type: GAUGE
+        help: "The SNR of the wifi."
+    }];
+    bool wifi_connected = 4 [(prometheus) = {
+        name: "connection_status"
+        type: GAUGE
+        help: "Whether the wifi is connected."
+        labels: "connection:wifi"
+    }];
+    bool internet = 5 [(prometheus) = {
+        name: "internet_status"
+        type: GAUGE
+        help: "Does the device have internet connectivity."
+        labels: "connection:internet"
+    }];
+}
