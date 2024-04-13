@@ -74,8 +74,9 @@ type metricFetcher interface {
 
 // Mapping of metric JSONName to metric data for a particular endpoint.
 type metricSet[T proto.Message] struct {
-	metrics map[string]metricData
-	fetcher func(context.Context) (T, error)
+	metrics  map[string]metricData
+	fetcher  func(context.Context) (T, error)
+	overview prometheus.Summary
 }
 
 func (m *metricSet[T]) Describe(ch chan<- *prometheus.Desc) {
@@ -85,9 +86,11 @@ func (m *metricSet[T]) Describe(ch chan<- *prometheus.Desc) {
 		}
 		ch <- metric.desc
 	}
+	m.overview.Describe(ch)
 }
 
 func (m *metricSet[T]) Collect(ctx context.Context, ch chan<- prometheus.Metric) {
+	start := time.Now()
 	logger := log.Default()
 	v, err := m.fetcher(ctx)
 	if err != nil {
@@ -132,6 +135,8 @@ func (m *metricSet[T]) Collect(ctx context.Context, ch chan<- prometheus.Metric)
 			metric.labels...,
 		)
 	}
+	m.overview.Observe(time.Since(start).Seconds())
+	m.overview.Collect(ch)
 }
 
 func newMetricSet[T proto.Message](ns string, fetcher func(context.Context) (T, error)) metricFetcher {
@@ -174,6 +179,11 @@ func newMetricSet[T proto.Message](ns string, fetcher func(context.Context) (T, 
 	return &metricSet[T]{
 		metrics: set,
 		fetcher: fetcher,
+		overview: prometheus.NewSummary(prometheus.SummaryOpts{
+			Namespace: "wallconnector",
+			Subsystem: ns,
+			Name:      "fetch_duration_seconds",
+		}),
 	}
 }
 
