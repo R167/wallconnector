@@ -181,8 +181,13 @@ func newMetricSet[T proto.Message](ns string, fetcher func(context.Context) (T, 
 		fetcher: fetcher,
 		overview: prometheus.NewSummary(prometheus.SummaryOpts{
 			Namespace: "wallconnector",
-			Subsystem: ns,
+			Subsystem: "scrape",
 			Name:      "fetch_duration_seconds",
+			Help:      "Duration of a scrape for a metric set.",
+
+			ConstLabels: map[string]string{
+				"metric_set": ns,
+			},
 		}),
 	}
 }
