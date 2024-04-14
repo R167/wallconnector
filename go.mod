@@ -1,6 +1,6 @@
 module github.com/R167/wallconnector
 
-go 1.20
+go 1.22
 
 require (
 	github.com/prometheus/client_golang v1.16.0
